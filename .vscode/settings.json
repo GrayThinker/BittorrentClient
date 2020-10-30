@@ -1,6 +1,9 @@
 {
     "cSpell.words": [
         "asyncio",
-        "pformat"
+        "pformat",
+        "aiohttp",
+        "struct",
+        "ipaddress"
     ]
 }

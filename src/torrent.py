@@ -25,7 +25,7 @@ class Torrent:
 
     @property
     def info_hash(self):
-        return hashlib.sha1(bencoder.encode(self.data)).digest().hex()
+        return hashlib.sha1(bencoder.encode(self.data)).digest()
 
     @property
     def length(self):
@@ -86,6 +86,3 @@ class Torrent:
 
     def __repr__(self):
         return pprint.pformat(self.metainfo)
-
-tor = Torrent(".\\tests\\wired-cd.torrent")
-print(tor.info_hash)
