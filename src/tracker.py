@@ -6,6 +6,8 @@ import ipaddress
 import bencoder
 import asyncio
 import aiohttp
+import logging
+import sys
 
 class Tracker:
     """Connection to a tracker for the torrent"""
@@ -14,11 +16,10 @@ class Tracker:
             assert isinstance(torrent, Torrent)
         except:
             raise TypeError()
-
+        self._peers = []
         self.torrent = torrent
         self.PEER_ID = token_bytes(10).hex()
         self.session = aiohttp.ClientSession()
-        self.peers = []
         self.params = {
             'info_hash' : self.torrent.info_hash,
             'peer_id' : self.PEER_ID,
@@ -31,11 +32,22 @@ class Tracker:
             'compact' : 1
         }
 
+    @property
+    async def peers(self):
+        """
+        Using this because __init__() cannot use async/await
+        """
+        if not self._peers:
+            self._peers = await self.get_peers()
+        return self._peers
+
     async def get_online_announce(self):
         self.announce = str((await self.find_online_tracker())[0])
+        # loop through
 
     async def close(self):
         await self.session.close()
+        logging.info("Closed session")
 
     async def test(self, announce):
         try:
@@ -53,8 +65,9 @@ class Tracker:
             try:
                 working.remove(None)
             except ValueError:
+                logging.info("Found online tracker")
                 return working
-    
+
     async def get_peers(self):
         """
         query tracker for peers with torrent pieces
@@ -62,10 +75,14 @@ class Tracker:
         await self.get_online_announce()
         self.url = self.announce + '?' + urlencode(self.params)
         response = await self.session.get(self.url)
+        if response.status != 200:
+            print("Couldn't get peers from tracker") #log
+            await self.session.close()
+            raise ConnectionError
         response_data = await response.read()
         res = bencoder.decode(response_data)
-        self.peers = self.parse_peers(res[b"peers"])
-        print("Parsed peers")
+        logging.info("got peers")
+        return self.parse_peers(res[b"peers"])
 
     def parse_peers(self, peers_bin):
         """
@@ -77,15 +94,5 @@ class Tracker:
             port = peers_bin[i+4:i+6]
             port = unpack(">H", port)[0]
             peers.append((address, port))
+        logging.info("parsed peers")
         return peers
-
-async def main():
-    tor = Torrent(".\\tests\\Justice League.torrent")
-    t = Tracker(tor)
-    await t.get_peers()
-    await t.close()
-
-    
-
-if __name__ == "__main__":
-    asyncio.run(main())

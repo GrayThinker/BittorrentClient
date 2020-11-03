@@ -4,6 +4,9 @@
         "pformat",
         "aiohttp",
         "struct",
-        "ipaddress"
+        "ipaddress",
+        "PSTR",
+        "nargs",
+        "pytor"
     ]
 }

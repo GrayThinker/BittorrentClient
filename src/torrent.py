@@ -3,7 +3,6 @@ import sys
 import pprint
 import hashlib
 
-
 class Torrent:
     """
     Represents the torrent extraceted from the .torrent file
