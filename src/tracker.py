@@ -1,12 +1,12 @@
+from urllib.parse import urlencode
 from src.torrent import Torrent
 from secrets import token_bytes
-from urllib.parse import urlencode
+from src.logger import log
 from struct import unpack
 import ipaddress
 import bencoder
 import asyncio
 import aiohttp
-import logging
 import sys
 
 class Tracker:
@@ -15,7 +15,9 @@ class Tracker:
         try:
             assert isinstance(torrent, Torrent)
         except:
+            log.critical("Tracker received non Torrent object")
             raise TypeError()
+
         self._peers = []
         self.torrent = torrent
         self.PEER_ID = token_bytes(10).hex()
@@ -42,12 +44,18 @@ class Tracker:
         return self._peers
 
     async def get_online_announce(self):
-        self.announce = str((await self.find_online_tracker())[0])
-        # loop through
+        trackers = await self.find_online_tracker()
+        try:
+            # discard after each subsequent call
+            self.announce = str(trackers.pop())
+        except IndexError:
+            log.error("No online trackers found\n")
+            raise IndexError
+            
 
     async def close(self):
         await self.session.close()
-        logging.info("Closed session")
+        log.info("Closed session")
 
     async def test(self, announce):
         try:
@@ -65,7 +73,7 @@ class Tracker:
             try:
                 working.remove(None)
             except ValueError:
-                logging.info("Found online tracker")
+                log.info("Found online tracker")
                 return working
 
     async def get_peers(self):
@@ -76,12 +84,13 @@ class Tracker:
         self.url = self.announce + '?' + urlencode(self.params)
         response = await self.session.get(self.url)
         if response.status != 200:
-            print("Couldn't get peers from tracker") #log
+            log.warning("Couldn't get peers from tracker")
+            # TODO: get different tracker from find_online;
             await self.session.close()
             raise ConnectionError
         response_data = await response.read()
         res = bencoder.decode(response_data)
-        logging.info("got peers")
+        log.info("got peers")
         return self.parse_peers(res[b"peers"])
 
     def parse_peers(self, peers_bin):
@@ -94,5 +103,5 @@ class Tracker:
             port = peers_bin[i+4:i+6]
             port = unpack(">H", port)[0]
             peers.append((address, port))
-        logging.info("parsed peers")
+        log.info("parsed peers")
         return peers

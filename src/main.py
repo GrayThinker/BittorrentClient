@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import aiohttp
 import logging
-
+from src.logger import log
 from src.torrent import Torrent
 from src.tracker import Tracker
 from src.peer import Peer
@@ -35,7 +35,7 @@ def get_args():
     return parser.parse_args()
 
 async def main():
-    from src.logger import log
+
     args = get_args()
     file = args.file
     
@@ -51,10 +51,10 @@ async def main():
 
 #Testing
     torrent = Torrent(file)
+
     tracker = Tracker(torrent)
     peer_ids = await tracker.peers
     await tracker.close()
-    
     peers = []
     for peer_id in peer_ids:
         peers.append(Peer(peer_id[0], peer_id[1], torrent.info_hash, tracker.PEER_ID))    
@@ -65,9 +65,6 @@ async def main():
         except ValueError:
             break
     print(working_peers)
-    # downloadManager(working_peers)
-    # downloadManager.run()
-
     
 async def test_peer(peer):
     if await peer.connect():
