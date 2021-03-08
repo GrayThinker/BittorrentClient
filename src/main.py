@@ -18,7 +18,6 @@ def get_args():
                         nargs="?",
                         default=".\\tests\\Justice League.torrent",
                         help="The .torrent file to download from")
-    args = parser.parse_args()
     
     parser.add_argument("storeDir",
                         nargs="?",
@@ -31,11 +30,11 @@ def get_args():
     parser.add_argument("-V", "--Verbose",
                         action="store_true",
                         help="show all loggin info")
+    # args = parser.parse_args()
     
     return parser.parse_args()
 
 async def main():
-
     args = get_args()
     file = args.file
     
@@ -59,6 +58,7 @@ async def main():
     for peer_id in peer_ids:
         peers.append(Peer(peer_id[0], peer_id[1], torrent.info_hash, tracker.PEER_ID))    
     working_peers = await asyncio.gather(*[test_peer(peer) for peer in peers])
+   
     while True:
         try:
             working_peers.remove(None)

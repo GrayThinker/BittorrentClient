@@ -10,5 +10,5 @@ import logging
 log = logging.getLogger('')
 
 handler = logging.StreamHandler(sys)
-handler.setLevel(logging.WARNING)
+# handler.setLevel(logging.INFO)
 log.addHandler(handler)
